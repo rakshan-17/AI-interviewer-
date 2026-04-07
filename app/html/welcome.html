@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Interview Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#0d0f14;--surface:#13161e;--card:#181c26;--border:#252a38;--accent:#5b8cff;--accent2:#ff6b6b;--gold:#f0c040;--text:#e8ecf4;--muted:#7a8099;--success:#3ecf8e;--radius:12px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid var(--border);background:rgba(13,15,20,.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:-.5px}
+  .logo span{color:var(--accent)}
+  .badge{font-size:.65rem;background:var(--accent);color:#fff;padding:3px 8px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .hero{text-align:center;padding:52px 24px 36px;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(91,140,255,.12),transparent)}
+  .hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2rem,5vw,3.2rem);line-height:1.15;letter-spacing:-1px}
+  .hero h1 em{font-style:normal;color:var(--accent)}
+  .hero p{color:var(--muted);margin-top:10px;font-size:.87rem;max-width:460px;margin-inline:auto}
+  main{flex:1;max-width:900px;width:100%;margin:0 auto;padding:24px 20px 60px;display:flex;flex-direction:column;gap:22px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .card-header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface)}
+  .card-header .icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+  .icon-blue{background:rgba(91,140,255,.15);color:var(--accent)}
+  .icon-gold{background:rgba(240,192,64,.15);color:var(--gold)}
+  .card-header h2{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700}
+  .card-header small{color:var(--muted);font-size:.7rem;margin-left:auto}
+  .card-body{padding:18px}
+  label{display:block;font-size:.7rem;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+  textarea,select,input[type=text]{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:.83rem;padding:11px 13px;resize:vertical;outline:none;transition:border-color .2s}
+  textarea:focus,select:focus,input:focus{border-color:var(--accent)}
+  .provider-row{display:flex;gap:10px;margin-bottom:14px}
+  .provider-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'DM Mono',monospace;font-size:.78rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+  .provider-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(91,140,255,.08)}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:8px;font-family:'DM Mono',monospace;font-size:.8rem;cursor:pointer;border:none;transition:all .2s;font-weight:500}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#4a7af0;transform:translateY(-1px)}
+  .btn-primary:active{transform:none}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+  .chat-area{min-height:180px;max-height:400px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);margin-bottom:12px;scroll-behavior:smooth}
+  .chat-area:empty::before{content:'Chat with your AI interviewer below.';color:var(--muted);font-size:.8rem;display:flex;align-items:center;justify-content:center;height:100%;text-align:center}
+  .msg{display:flex;gap:9px;animation:fadeUp .22s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .msg.user{flex-direction:row-reverse}
+  .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
+  .avatar.ai{background:rgba(91,140,255,.2);color:var(--accent)}
+  .avatar.user{background:rgba(240,192,64,.2);color:var(--gold)}
+  .bubble{max-width:82%;padding:9px 13px;border-radius:10px;font-size:.81rem;line-height:1.65;white-space:pre-wrap}
+  .msg.ai .bubble{background:var(--surface);border:1px solid var(--border);border-top-left-radius:2px}
+  .msg.user .bubble{background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.2);border-top-right-radius:2px}
+  .meta{font-size:.63rem;color:var(--muted);margin-top:3px}
+  .input-row{display:flex;gap:9px}
+  .input-row input{flex:1}
+  .drop-zone{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+  .drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(91,140,255,.04)}
+  .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .drop-zone .dz-icon{font-size:1.8rem;margin-bottom:8px}
+  .drop-zone p{color:var(--muted);font-size:.78rem}
+  .dz-name{color:var(--success);font-size:.8rem;margin-top:5px;display:none}
+  .resume-preview{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:.75rem;color:var(--muted);max-height:160px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;display:none;margin-top:12px}
+  .status-bar{display:flex;align-items:center;gap:7px;font-size:.7rem;color:var(--muted);padding:9px 16px;background:var(--surface);border-top:1px solid var(--border)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+  .dot.ok{background:var(--success);animation:pulse 2s infinite}
+  .dot.err{background:var(--accent2)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  #toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:.78rem;display:none;z-index:999;animation:fadeUp .2s ease}
+  #toast.err{border-color:var(--accent2);color:var(--accent2)}
+  #toast.ok{border-color:var(--success);color:var(--success)}
+  .spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .tip{background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.2);border-radius:8px;padding:10px 14px;font-size:.75rem;color:var(--gold);line-height:1.6}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">AI<span>Interview</span><span class="badge">BETA</span></div>
+  <div style="font-size:.7rem;color:var(--muted)">GPT-4o &amp; Gemini 2.5</div>
+</header>
+
+<div class="hero">
+  <h1>Practice. Improve. <em>Get Hired.</em></h1>
+  <p>Upload your resume and chat with an AI interviewer powered by OpenAI or Google Gemini.</p>
+</div>
+
+<main>
+  <!-- Resume -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-gold">📄</div>
+      <h2>Resume Upload</h2>
+      <small>PDF only</small>
+    </div>
+    <div class="card-body">
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".pdf"/>
+        <div class="dz-icon">☁️</div>
+        <p>Drag &amp; drop your PDF or <strong style="color:var(--accent)">browse</strong></p>
+        <div class="dz-name" id="dzName"></div>
+      </div>
+      <div id="resumePreview" class="resume-preview"></div>
+      <div style="margin-top:11px;display:flex;gap:10px;align-items:center">
+        <button class="btn btn-primary" id="uploadBtn" onclick="uploadResume()" disabled>
+          <span class="spinner" id="uploadSpinner"></span>
+          <span id="uploadLabel">Upload Resume</span>
+        </button>
+        <span id="uploadStatus" style="font-size:.73rem;color:var(--muted)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="card">
+    <div class="card-header">
+      <div class="icon icon-blue">🎙️</div>
+      <h2>Interview Chat</h2>
+      <small id="latencyBadge" style="display:none"></small>
+    </div>
+    <div class="card-body">
+      <label>AI Provider</label>
+      <div class="provider-row">
+        <button class="provider-btn active" id="btn-openai" onclick="setProvider('openai')">🤖 OpenAI GPT-4o</button>
+        <button class="provider-btn" id="btn-gemini" onclick="setProvider('gemini')">✨ Google Gemini</button>
+      </div>
+      <div class="chat-area" id="chatArea"></div>
+      <div class="input-row">
+        <input type="text" id="chatInput" placeholder="Ask an interview question..." onkeydown="if(event.key==='Enter')sendMessage()"/>
+        <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">
+          <span class="spinner" id="chatSpinner"></span>
+          <span id="sendLabel">Send</span>
+        </button>
+      </div>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+        <span style="font-size:.68rem;color:var(--muted);align-self:center">Try:</span>
+        <button class="btn btn-ghost" style="padding:5px 11px;font-size:.7rem" onclick="setPrompt('Tell me about yourself')">Tell me about yourself</button>
+        <button class="btn btn-ghost" style="padding:5px 11px;font-size:.7rem" onclick="setPrompt('What is your greatest weakness?')">Greatest weakness</button>
+        <button class="btn btn-ghost" style="padding:5px 11px;font-size:.7rem" onclick="setPrompt('Explain REST vs GraphQL')">REST vs GraphQL</button>
+        <button class="btn btn-ghost" style="padding:5px 11px;font-size:.7rem" onclick="setPrompt('Design a URL shortener system')">System design</button>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+    </div>
+  </div>
+
+  <div class="tip">💡 <strong>Tip:</strong> Upload your resume first, then ask the AI to "ask me questions based on my resume" for personalized interview practice.</div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+let provider='openai',resumeText='';
+
+function setProvider(p){
+  provider=p;
+  document.querySelectorAll('.provider-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+p).classList.add('active');
+}
+
+const fileInput=document.getElementById('fileInput');
+const dropZone=document.getElementById('dropZone');
+const uploadBtn=document.getElementById('uploadBtn');
+
+fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleFile(fileInput.files[0])});
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type==='application/pdf'){fileInput.files=e.dataTransfer.files;handleFile(f);}
+  else showToast('Please drop a PDF file','err');
+});
+
+function handleFile(f){
+  document.getElementById('dzName').textContent='📎 '+f.name;
+  document.getElementById('dzName').style.display='block';
+  uploadBtn.disabled=false;
+  document.getElementById('uploadStatus').textContent='';
+}
+
+async function uploadResume(){
+  const file=fileInput.files[0];if(!file)return;
+  setLoading('upload',true);
+  document.getElementById('uploadStatus').textContent='Parsing PDF...';
+  const form=new FormData();form.append('file',file);
+  try{
+    const res=await fetch('/upload-resume',{method:'POST',body:form});
+    const data=await res.json();
+    resumeText=data.text_preview||'';
+    document.getElementById('resumePreview').textContent=resumeText;
+    document.getElementById('resumePreview').style.display='block';
+    document.getElementById('uploadStatus').textContent='✅ Loaded ('+resumeText.length+' chars)';
+    setStatus('ok','Resume loaded');showToast('Resume uploaded!','ok');
+  }catch(e){showToast('Upload failed: '+e.message,'err');setStatus('err','Upload failed');}
+  finally{setLoading('upload',false);}
+}
+
+function setPrompt(t){document.getElementById('chatInput').value=t;document.getElementById('chatInput').focus();}
+
+async function sendMessage(){
+  const inp=document.getElementById('chatInput');
+  const text=inp.value.trim();if(!text)return;
+  inp.value='';appendMsg('user',text);
+  setLoading('chat',true);setStatus('','Thinking...');
+  let prompt=text;
+  if(resumeText)prompt='[Resume Context]:\n'+resumeText.slice(0,2000)+'\n\n[Question]: '+text;
+  try{
+    const res=await fetch('/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,provider})});
+    const data=await res.json();
+    if(data.success){
+      appendMsg('ai',data.response,data.latency);
+      setStatus('ok','Ready · '+provider);
+      const lb=document.getElementById('latencyBadge');lb.textContent=data.latency+'s';lb.style.display='block';
+    }else{
+      appendMsg('ai','⚠️ '+data.error_message);setStatus('err','Error');showToast(data.error_message,'err');
+    }
+  }catch(e){appendMsg('ai','⚠️ Network error: '+e.message);setStatus('err','Network error');}
+  finally{setLoading('chat',false);}
+}
+
+function appendMsg(role,text,latency){
+  const chat=document.getElementById('chatArea');
+  const div=document.createElement('div');div.className='msg '+role;
+  const av=document.createElement('div');av.className='avatar '+role;av.textContent=role==='ai'?'AI':'Me';
+  const wrap=document.createElement('div');
+  const bub=document.createElement('div');bub.className='bubble';bub.textContent=text;
+  wrap.appendChild(bub);
+  if(latency){const m=document.createElement('div');m.className='meta';m.textContent=latency+'s · '+provider;if(role==='user')m.style.textAlign='right';wrap.appendChild(m);}
+  div.appendChild(av);div.appendChild(wrap);chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
+}
+
+function setLoading(type,state){
+  if(type==='upload'){
+    document.getElementById('uploadSpinner').style.display=state?'block':'none';
+    document.getElementById('uploadLabel').textContent=state?'Uploading...':'Upload Resume';
+    uploadBtn.disabled=state;
+  }else{
+    document.getElementById('chatSpinner').style.display=state?'block':'none';
+    document.getElementById('sendLabel').textContent=state?'Sending...':'Send';
+    document.getElementById('sendBtn').disabled=state;
+    document.getElementById('chatInput').disabled=state;
+  }
+}
+
+function setStatus(type,msg){
+  const d=document.getElementById('statusDot');
+  d.className='dot'+(type?' '+type:'');
+  document.getElementById('statusText').textContent=msg;
+}
+
+let toastTimer;
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=type||'';t.style.display='block';
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',3500);
+}
+</script>
+</body>
+</html>

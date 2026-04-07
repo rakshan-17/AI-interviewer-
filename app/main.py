@@ -1,0 +1,73 @@
+import shutil
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.rate_limiter import is_allowed
+from app.services.llm_service import generate_response
+from app.services.resume_service import extract_text_from_pdf
+from app.types import PromptRequest
+from app.utils.file_parser import read_html_file
+from app.utils.text_cleaner import clean_text
+
+app = FastAPI(title="AI Interview Simulator")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+MAX_CHARS = 5000
+
+
+@app.get("/", response_class=HTMLResponse)
+async def welcome():
+    welcome_html = await read_html_file("./app/html/welcome.html")
+    return welcome_html
+
+
+@app.post("/ask")
+async def ask(request: PromptRequest):
+    system_prompt = "You are a professional technical interviewer. Ask insightful questions, evaluate answers, and provide constructive feedback. Be concise and clear."
+    user_prompt = request.prompt
+    try:
+        user_id = "default_user"
+
+        if not is_allowed(user_id):
+            raise HTTPException(status_code=429, detail="Rate limit exceeded")
+
+        response, latency = generate_response(request, system_prompt, user_prompt)
+
+        return {
+            "success": True,
+            "provider": request.provider,
+            "response": response,
+            "latency": f"{latency:.2f}",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("Exception", e)
+        return {
+            "success": False,
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+        }
+    finally:
+        print("\nLLM Call Complete", end="\n\n")
+
+
+@app.post("/upload-resume")
+async def upload_resume(file: UploadFile = File(...)):
+    file_path = f"temp_{file.filename}"
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    text = extract_text_from_pdf(file_path)
+    cleaned_text = clean_text(text)
+
+    return {"text_preview": cleaned_text[:MAX_CHARS]}
